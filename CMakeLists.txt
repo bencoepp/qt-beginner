@@ -26,6 +26,9 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(qt-beginner
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+        data/2023.csv data/2024.csv data/2025.csv
+        weather.h weather.cpp
+        weatherutil.h weatherutil.cpp
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET qt-beginner APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
