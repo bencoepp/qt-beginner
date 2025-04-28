@@ -18,9 +18,13 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::on_pushButton_clicked()
+void MainWindow::on_actionLoad_triggered()
 {
-    util->loadFromDirectory("C:\\Users\\Administrator\\Desktop\\Share\\qt-beginner\\qt-beginner\\data");
-    qDebug() << util->entries().length();
+    qDebug() << "load";
+}
+
+void MainWindow::on_actionClear_triggered()
+{
+    qDebug() << "clear";
 }
 
