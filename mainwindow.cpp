@@ -2,10 +2,13 @@
 #include "./ui_mainwindow.h"
 #include "weatherutil.h"
 #include "weathermodel.h"
+#include "weatherproxymodel.h"
 #include <QFileDialog>
 
 WeatherUtil *util = nullptr;
 WeatherModel *model = nullptr;
+WeatherProxyModel *proxyModel = nullptr;
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -14,8 +17,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     util = new WeatherUtil(this);
     model = new WeatherModel(this);
+    proxyModel = new WeatherProxyModel(this);
+
     updateWeatherData();
-    ui->tableView->setModel(model);
+    proxyModel->setSourceModel(model);
+    ui->tableView->setModel(proxyModel);
+    ui->tableView->setSortingEnabled(true);
     ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 }
 
@@ -45,5 +52,9 @@ void MainWindow::updateWeatherData()
     ui->lcd_totalElements->display(static_cast<int>(util->entries().size()));
     ui->lcd_highestTemp->display(util->highestTemp());
     ui->lcd_avgTemp->display(util->avgTemp());
+
+    QChartView *chartView = util->createTemperatureChart();
+    if(chartView)
+        ui->chart->layout()->addWidget(chartView);
 }
 

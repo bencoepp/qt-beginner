@@ -2,8 +2,8 @@
 #define WEATHERUTIL_H
 
 #include "weather.h"
-
 #include <QObject>
+#include <QtCharts/QChartView>
 
 class WeatherUtil : public QObject
 {
@@ -14,6 +14,7 @@ public:
     const QVector<Weather>& entries() const;
     double highestTemp();
     double avgTemp();
+    QChartView* createTemperatureChart() const;
 private:
     QVector<Weather> m_entries;
     bool checkWeatherExists(const Weather &weather);

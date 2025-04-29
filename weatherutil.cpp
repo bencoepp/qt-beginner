@@ -1,5 +1,9 @@
 #include "weatherutil.h"
 #include <QDir>
+#include <QtCharts/QChartView>
+#include <QtCharts/QLineSeries>
+#include <QtCharts/QValueAxis>
+#include <QtCharts/QDateTimeAxis>
 
 WeatherUtil::WeatherUtil(QObject *parent)
     : QObject{parent}
@@ -84,6 +88,57 @@ double WeatherUtil::avgTemp()
         sum += weather.getAverageTemperature();
     }
     return sum / m_entries.size();
+}
+
+QChartView *WeatherUtil::createTemperatureChart() const
+{
+    if (m_entries.isEmpty())
+        return nullptr;
+
+    QLineSeries *avgTempSeries = new QLineSeries();
+    avgTempSeries->setName("Average Temp");
+
+    QLineSeries *minTempSeries = new QLineSeries();
+    minTempSeries->setName("Minimum Temp");
+
+    QLineSeries *maxTempSeries = new QLineSeries();
+    maxTempSeries->setName("Maximum Temp");
+
+    for (const Weather &weather : m_entries) {
+        qint64 timestamp = weather.getDate().toMSecsSinceEpoch();
+        avgTempSeries->append(timestamp, weather.getAverageTemperature());
+        minTempSeries->append(timestamp, weather.getMinimumTemperature());
+        maxTempSeries->append(timestamp, weather.getMaximunTemperature());
+    }
+
+    QChart *chart = new QChart();
+    chart->addSeries(avgTempSeries);
+    chart->addSeries(minTempSeries);
+    chart->addSeries(maxTempSeries);
+    chart->setTitle("Temperature Over Time");
+    chart->legend()->setAlignment(Qt::AlignBottom);
+
+    QDateTimeAxis *axisX = new QDateTimeAxis;
+    axisX->setFormat("yyyy-MM-dd");
+    axisX->setTitleText("Date");
+    chart->addAxis(axisX, Qt::AlignBottom);
+
+    avgTempSeries->attachAxis(axisX);
+    minTempSeries->attachAxis(axisX);
+    maxTempSeries->attachAxis(axisX);
+
+    QValueAxis *axisY = new QValueAxis;
+    axisY->setTitleText("Temperature (°C)");
+    chart->addAxis(axisY, Qt::AlignLeft);
+
+    avgTempSeries->attachAxis(axisY);
+    minTempSeries->attachAxis(axisY);
+    maxTempSeries->attachAxis(axisY);
+
+    QChartView *chartView = new QChartView(chart);
+    chartView->setRenderHint(QPainter::Antialiasing);
+
+    return chartView;
 }
 
 bool WeatherUtil::checkWeatherExists(const Weather &weather)

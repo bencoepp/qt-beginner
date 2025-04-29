@@ -9,8 +9,8 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools Charts)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools Charts)
 
 set(TS_FILES qt-beginner_de_DE.ts)
 
@@ -31,6 +31,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         weatherutil.h weatherutil.cpp
         data/2018.csv data/2019.csv data/2020.csv data/2021.csv data/2022.csv
         weathermodel.h weathermodel.cpp
+        weatherproxymodel.h weatherproxymodel.cpp
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET qt-beginner APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
@@ -54,7 +55,7 @@ else()
     qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
 endif()
 
-target_link_libraries(qt-beginner PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(qt-beginner PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Charts)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
