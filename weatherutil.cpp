@@ -59,6 +59,33 @@ const QVector<Weather> &WeatherUtil::entries() const
     return m_entries;
 }
 
+double WeatherUtil::highestTemp()
+{
+    if (m_entries.isEmpty())
+        return 0.0f;
+
+    float highest = m_entries.first().getMaximunTemperature();
+
+    for (const Weather &weather : std::as_const(m_entries)) {
+        if (weather.getMaximunTemperature() > highest) {
+            highest = weather.getMaximunTemperature();
+        }
+    }
+    return highest;
+}
+
+double WeatherUtil::avgTemp()
+{
+    if (m_entries.isEmpty())
+        return 0.0f;
+
+    float sum = 0.0f;
+    for (const Weather &weather : std::as_const(m_entries)) {
+        sum += weather.getAverageTemperature();
+    }
+    return sum / m_entries.size();
+}
+
 bool WeatherUtil::checkWeatherExists(const Weather &weather)
 {
     for(const Weather &element : std::as_const(m_entries)){

@@ -42,5 +42,8 @@ void MainWindow::updateWeatherData()
 {
     qDebug() << util->entries().size();
     model->setWeatherList(util->entries());
+    ui->lcd_totalElements->display(static_cast<int>(util->entries().size()));
+    ui->lcd_highestTemp->display(util->highestTemp());
+    ui->lcd_avgTemp->display(util->avgTemp());
 }
 

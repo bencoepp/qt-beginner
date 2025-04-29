@@ -12,6 +12,8 @@ public:
     explicit WeatherUtil(QObject *parent = nullptr);
     bool loadFromDirectory(const QString &directoryPath);
     const QVector<Weather>& entries() const;
+    double highestTemp();
+    double avgTemp();
 private:
     QVector<Weather> m_entries;
     bool checkWeatherExists(const Weather &weather);
