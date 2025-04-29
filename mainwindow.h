@@ -15,7 +15,7 @@ class MainWindow : public QMainWindow
 
 public:
     MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+    ~MainWindow();    
 
 private slots:
     void on_actionLoad_triggered();
@@ -23,5 +23,6 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
+    void updateWeatherData();
 };
 #endif // MAINWINDOW_H

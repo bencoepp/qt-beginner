@@ -27,19 +27,34 @@
        <attribute name="title">
         <string>Table</string>
        </attribute>
-       <widget class="QPushButton" name="pushButton">
-        <property name="geometry">
-         <rect>
-          <x>200</x>
-          <y>210</y>
-          <width>75</width>
-          <height>24</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>PushButton</string>
-        </property>
-       </widget>
+       <layout class="QVBoxLayout" name="verticalLayout_4">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <property name="sizeConstraint">
+           <enum>QLayout::SizeConstraint::SetMaximumSize</enum>
+          </property>
+          <item>
+           <widget class="QLCDNumber" name="lcd_totalElements"/>
+          </item>
+          <item>
+           <widget class="QLCDNumber" name="lcd_highestTemp"/>
+          </item>
+          <item>
+           <widget class="QLCDNumber" name="lcd_avgTemp"/>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="Line" name="line">
+          <property name="orientation">
+           <enum>Qt::Orientation::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTableView" name="tableView"/>
+        </item>
+       </layout>
       </widget>
       <widget class="QWidget" name="chart">
        <attribute name="title">
