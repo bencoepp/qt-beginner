@@ -14,7 +14,8 @@ public:
     const QVector<Weather>& entries() const;
     double highestTemp();
     double avgTemp();
-    QChartView* createTemperatureChart() const;
+    double lowestTemp();
+    QChartView* createTemperatureChart();
 private:
     QVector<Weather> m_entries;
     bool checkWeatherExists(const Weather &weather);

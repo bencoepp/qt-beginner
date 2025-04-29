@@ -90,7 +90,22 @@ double WeatherUtil::avgTemp()
     return sum / m_entries.size();
 }
 
-QChartView *WeatherUtil::createTemperatureChart() const
+double WeatherUtil::lowestTemp()
+{
+    if (m_entries.isEmpty())
+        return 0.0f;
+
+    float lowest = m_entries.first().getMinimumTemperature();
+
+    for (const Weather &weather : std::as_const(m_entries)) {
+        if (weather.getMinimumTemperature() < lowest) {
+            lowest = weather.getMinimumTemperature();
+        }
+    }
+    return lowest;
+}
+
+QChartView *WeatherUtil::createTemperatureChart()
 {
     if (m_entries.isEmpty())
         return nullptr;
@@ -104,7 +119,7 @@ QChartView *WeatherUtil::createTemperatureChart() const
     QLineSeries *maxTempSeries = new QLineSeries();
     maxTempSeries->setName("Maximum Temp");
 
-    for (const Weather &weather : m_entries) {
+    for (const Weather &weather : std::as_const(m_entries)) {
         qint64 timestamp = weather.getDate().toMSecsSinceEpoch();
         avgTempSeries->append(timestamp, weather.getAverageTemperature());
         minTempSeries->append(timestamp, weather.getMinimumTemperature());
@@ -129,6 +144,7 @@ QChartView *WeatherUtil::createTemperatureChart() const
 
     QValueAxis *axisY = new QValueAxis;
     axisY->setTitleText("Temperature (°C)");
+    axisY->setRange(lowestTemp(), highestTemp());
     chart->addAxis(axisY, Qt::AlignLeft);
 
     avgTempSeries->attachAxis(axisY);
