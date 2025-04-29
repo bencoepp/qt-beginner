@@ -1,5 +1,8 @@
 #include "weatherutil.h"
 #include <QDir>
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QSqlError>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
@@ -7,7 +10,14 @@
 
 WeatherUtil::WeatherUtil(QObject *parent)
     : QObject{parent}
-{}
+{
+    db = QSqlDatabase::addDatabase("QSQLITE");
+    db.setDatabaseName("weather.db");
+
+    if (!db.open()) {
+        qDebug() << "Error: Unable to connect to database!" << db.lastError().text();
+    }
+}
 
 bool WeatherUtil::loadFromDirectory(const QString &directoryPath)
 {
@@ -22,8 +32,6 @@ bool WeatherUtil::loadFromDirectory(const QString &directoryPath)
         qWarning() << "No CSV files found in:" << directoryPath;
         return false;
     }
-
-    m_entries.clear();
 
     for (const QString &fileName : csvFiles) {
         QFile file(dir.filePath(fileName));
@@ -46,7 +54,7 @@ bool WeatherUtil::loadFromDirectory(const QString &directoryPath)
                 Weather element;
                 element.parse(line);
                 if(!checkWeatherExists(element)){
-                    m_entries.push_back(std::move(element));
+                    insert(element);
                 }
             }catch(std::exception){
                 qWarning() << "An error happend while parsing a line";
@@ -58,13 +66,28 @@ bool WeatherUtil::loadFromDirectory(const QString &directoryPath)
     return true;
 }
 
-const QVector<Weather> &WeatherUtil::entries() const
+QVector<Weather> WeatherUtil::select(const QString &selectQuery)
 {
-    return m_entries;
+    QVector<Weather> weatherList;
+
+    QSqlQuery query;
+    if (!query.exec(selectQuery)) {
+        qDebug() << "Error executing select query:" << query.lastError().text();
+        return weatherList;
+    }
+
+    while (query.next()) {
+        Weather w;
+        w.parse(query);
+        weatherList.push_back(w);
+    }
+
+    return weatherList;
 }
 
 double WeatherUtil::highestTemp()
 {
+    QVector<Weather> m_entries = select("SELECT * FROM weather");
     if (m_entries.isEmpty())
         return 0.0f;
 
@@ -80,6 +103,8 @@ double WeatherUtil::highestTemp()
 
 double WeatherUtil::avgTemp()
 {
+    QVector<Weather> m_entries = select("SELECT * FROM weather");
+
     if (m_entries.isEmpty())
         return 0.0f;
 
@@ -92,6 +117,8 @@ double WeatherUtil::avgTemp()
 
 double WeatherUtil::lowestTemp()
 {
+    QVector<Weather> m_entries = select("SELECT * FROM weather");
+
     if (m_entries.isEmpty())
         return 0.0f;
 
@@ -107,6 +134,8 @@ double WeatherUtil::lowestTemp()
 
 QChartView *WeatherUtil::createTemperatureChart()
 {
+    QVector<Weather> m_entries = select("SELECT * FROM weather");
+
     if (m_entries.isEmpty())
         return nullptr;
 
@@ -157,9 +186,65 @@ QChartView *WeatherUtil::createTemperatureChart()
     return chartView;
 }
 
-bool WeatherUtil::checkWeatherExists(const Weather &weather)
+bool WeatherUtil::insert(const Weather &weather)
 {
-    for(const Weather &element : std::as_const(m_entries)){
+    QSqlQuery query;
+
+    query.prepare(R"(
+        INSERT INTO weather (
+            date,
+            averageTemperature,
+            minimumTemperature,
+            maximunTemperature,
+            precipitation,
+            snow,
+            windDirection,
+            windSpeed,
+            windPeakGust,
+            airPressure,
+            sunshineDuration
+        ) VALUES (
+            :date,
+            :averageTemperature,
+            :minimumTemperature,
+            :maximunTemperature,
+            :precipitation,
+            :snow,
+            :windDirection,
+            :windSpeed,
+            :windPeakGust,
+            :airPressure,
+            :sunshineDuration
+        )
+    )");
+
+    // Bind values
+    query.bindValue(":date", weather.getDate().toString(Qt::ISODate)); // Save date as ISO format string
+    query.bindValue(":averageTemperature", weather.getAverageTemperature());
+    query.bindValue(":minimumTemperature", weather.getMinimumTemperature());
+    query.bindValue(":maximunTemperature", weather.getMaximunTemperature());
+    query.bindValue(":precipitation", weather.getPrecipitation());
+    query.bindValue(":snow", weather.getSnow());
+    query.bindValue(":windDirection", weather.getWindDirection());
+    query.bindValue(":windSpeed", weather.getWindSpeed());
+    query.bindValue(":windPeakGust", weather.getWindPeakGust());
+    query.bindValue(":airPressure", weather.getAirPressure());
+    query.bindValue(":sunshineDuration", weather.getSunshineDuration());
+
+    // Execute and check success
+    if (!query.exec()) {
+        qDebug() << "Error inserting weather data:" << query.lastError().text();
+        return false;
+    }
+
+    qDebug() << "Inserted Element";
+
+    return true;
+}
+
+bool WeatherUtil::checkWeatherExists(const Weather &weather)
+{    
+    for(const Weather &element : select("SELECT * FROM weather")){
         if (element.getDate() == weather.getDate()) {
             return true;
         }

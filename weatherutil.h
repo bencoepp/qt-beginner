@@ -3,6 +3,7 @@
 
 #include "weather.h"
 #include <QObject>
+#include <qsqldatabase.h>
 #include <QtCharts/QChartView>
 
 class WeatherUtil : public QObject
@@ -11,13 +12,14 @@ class WeatherUtil : public QObject
 public:
     explicit WeatherUtil(QObject *parent = nullptr);
     bool loadFromDirectory(const QString &directoryPath);
-    const QVector<Weather>& entries() const;
+    QVector<Weather> select(const QString &selectQuery);
     double highestTemp();
     double avgTemp();
     double lowestTemp();
     QChartView* createTemperatureChart();
 private:
-    QVector<Weather> m_entries;
+    QSqlDatabase db;
+    bool insert(const Weather &weather);
     bool checkWeatherExists(const Weather &weather);
 signals:
 };

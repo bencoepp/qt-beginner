@@ -2,12 +2,14 @@
 #define WEATHER_H
 
 #include <QDateTime>
+#include <QSqlQuery>
 
 class Weather
 {
 public:
     explicit Weather();
     void parse(const QString &line);
+    void parse(QSqlQuery query);
     QDateTime getDate() const;
     float getAverageTemperature() const;
     float getMinimumTemperature() const;

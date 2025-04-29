@@ -4,6 +4,9 @@
 #include "weathermodel.h"
 #include "weatherproxymodel.h"
 #include <QFileDialog>
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QSqlError>
 
 WeatherUtil *util = nullptr;
 WeatherModel *model = nullptr;
@@ -14,7 +17,6 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-
     util = new WeatherUtil(this);
     model = new WeatherModel(this);
     proxyModel = new WeatherProxyModel(this);
@@ -47,9 +49,9 @@ void MainWindow::on_actionClear_triggered()
 
 void MainWindow::updateWeatherData()
 {
-    qDebug() << util->entries().size();
-    model->setWeatherList(util->entries());
-    ui->lcd_totalElements->display(static_cast<int>(util->entries().size()));
+    qDebug() << util->select("SELECT * FROM weather").size();
+    model->setWeatherList(util->select("SELECT * FROM weather"));
+    ui->lcd_totalElements->display(static_cast<int>(util->select("SELECT * FROM weather").size()));
     ui->lcd_highestTemp->display(util->highestTemp());
     ui->lcd_avgTemp->display(util->avgTemp());
 

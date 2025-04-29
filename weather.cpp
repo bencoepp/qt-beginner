@@ -23,6 +23,22 @@ void Weather::parse(const QString &line)
     sunshineDuration = fields[10].toInt();
 }
 
+void Weather::parse(QSqlQuery query)
+{
+    QDateTime parseDate = QDateTime::fromString(query.value("date").toString(), Qt::ISODate);
+    date = parseDate;
+    averageTemperature = query.value("averageTemperature").toFloat();
+    minimumTemperature = query.value("minimumTemperature").toFloat();
+    maximunTemperature = query.value("maximunTemperature").toFloat();
+    precipitation = query.value("precipitation").toFloat();
+    snow = query.value("snow").toInt();
+    windDirection = static_cast<short>(query.value("windDirection").toInt());
+    windSpeed = query.value("windSpeed").toFloat();
+    windPeakGust = query.value("windPeakGust").toFloat();
+    airPressure = query.value("airPressure").toFloat();
+    sunshineDuration = query.value("sunshineDuration").toInt();
+}
+
 QDateTime Weather::getDate() const
 {
     return date;
