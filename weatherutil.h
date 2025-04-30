@@ -3,6 +3,7 @@
 
 #include "weather.h"
 #include <QObject>
+#include <qmutex.h>
 #include <qsqldatabase.h>
 #include <QtCharts/QChartView>
 
@@ -18,11 +19,14 @@ public:
     double avgTemp();
     double lowestTemp();
     QChartView* createTemperatureChart();
+public slots:
+    void loadFromDirectoryAsync(const QString &directoryPath);
 private:
     QSqlDatabase db;
     bool insert(const Weather &weather);
     bool checkWeatherExists(const Weather &weather);
 signals:
+    void loadingFinished();
 };
 
 #endif // WEATHERUTIL_H

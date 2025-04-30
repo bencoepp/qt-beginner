@@ -7,7 +7,10 @@
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
 #include <QtCharts/QDateTimeAxis>
+#include <QFuture>
+#include <QMutex>
 #include <QSqlRecord>
+#include <QtConcurrent/QtConcurrent>
 
 WeatherUtil::WeatherUtil(QObject *parent)
     : QObject{parent}
@@ -18,6 +21,81 @@ WeatherUtil::WeatherUtil(QObject *parent)
     if (!db.open()) {
         qDebug() << "Error: Unable to connect to database!" << db.lastError().text();
     }
+}
+
+void processCsvFile(const QString &filePath, const QString &dbPath, QMutex *mutex)
+{
+    QString connectionName = QUuid::createUuid().toString();
+    QSqlDatabase threadDb = QSqlDatabase::addDatabase("QSQLITE", connectionName);
+    threadDb.setDatabaseName(dbPath);
+
+    if (!threadDb.open()) {
+        qWarning() << "Thread DB open failed:" << threadDb.lastError().text();
+        return;
+    }
+
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qWarning() << "Cannot open file:" << filePath;
+        return;
+    }
+
+    QTextStream in(&file);
+    bool firstLine = true;
+    while (!in.atEnd()) {
+        QString line = in.readLine();
+        if (firstLine) {
+            firstLine = false;
+            continue;
+        }
+
+        try {
+            Weather element;
+            element.parse(line);
+
+            QSqlQuery query(threadDb);
+
+            // Lock while checking and inserting
+            QMutexLocker locker(mutex);
+            query.prepare("SELECT COUNT(*) FROM weather WHERE date = :date");
+            query.bindValue(":date", element.getDate().toString(Qt::ISODate));
+            if (query.exec() && query.next() && query.value(0).toInt() == 0) {
+                query.prepare(R"(
+                    INSERT INTO weather (
+                        date, averageTemperature, minimumTemperature, maximunTemperature,
+                        precipitation, snow, windDirection, windSpeed, windPeakGust,
+                        airPressure, sunshineDuration
+                    ) VALUES (
+                        :date, :averageTemperature, :minimumTemperature, :maximunTemperature,
+                        :precipitation, :snow, :windDirection, :windSpeed, :windPeakGust,
+                        :airPressure, :sunshineDuration
+                    )
+                )");
+
+                query.bindValue(":date", element.getDate().toString(Qt::ISODate));
+                query.bindValue(":averageTemperature", element.getAverageTemperature());
+                query.bindValue(":minimumTemperature", element.getMinimumTemperature());
+                query.bindValue(":maximunTemperature", element.getMaximunTemperature());
+                query.bindValue(":precipitation", element.getPrecipitation());
+                query.bindValue(":snow", element.getSnow());
+                query.bindValue(":windDirection", element.getWindDirection());
+                query.bindValue(":windSpeed", element.getWindSpeed());
+                query.bindValue(":windPeakGust", element.getWindPeakGust());
+                query.bindValue(":airPressure", element.getAirPressure());
+                query.bindValue(":sunshineDuration", element.getSunshineDuration());
+
+                if (!query.exec()) {
+                    qWarning() << "Insert failed:" << query.lastError().text();
+                }
+            }
+        } catch (...) {
+            qWarning() << "Error parsing line in file:" << filePath;
+        }
+    }
+
+    file.close();
+    threadDb.close();
+    QSqlDatabase::removeDatabase(connectionName);
 }
 
 bool WeatherUtil::loadFromDirectory(const QString &directoryPath)
@@ -34,36 +112,20 @@ bool WeatherUtil::loadFromDirectory(const QString &directoryPath)
         return false;
     }
 
+    QMutex *mutex = new QMutex();
+    QList<QFuture<void>> futures;
+
     for (const QString &fileName : csvFiles) {
-        QFile file(dir.filePath(fileName));
-        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            qWarning() << "Cannot open file:" << fileName;
-            continue;
-        }
-
-        QTextStream in(&file);
-
-        bool firstLine = true;
-        while (!in.atEnd()) {
-            QString line = in.readLine();
-            if (firstLine) {
-                firstLine = false;
-                continue;
-            }
-
-            try{
-                Weather element;
-                element.parse(line);
-                if(!checkWeatherExists(element)){
-                    insert(element);
-                }
-            }catch(std::exception){
-                qWarning() << "An error happend while parsing a line";
-            }
-        }
-        file.close();
+        QString fullPath = dir.filePath(fileName);
+        QFuture<void> future = QtConcurrent::run(processCsvFile, fullPath, db.databaseName(), mutex);
+        futures.append(future);
     }
 
+    for (auto &future : futures) {
+        future.waitForFinished();
+    }
+
+    delete mutex;
     return true;
 }
 
@@ -208,6 +270,40 @@ QChartView *WeatherUtil::createTemperatureChart()
     chartView->setRenderHint(QPainter::Antialiasing);
 
     return chartView;
+}
+
+void WeatherUtil::loadFromDirectoryAsync(const QString &directoryPath)
+{
+    QtConcurrent::run([=]() {
+        QDir dir(directoryPath);
+        if (!dir.exists()) {
+            qWarning() << "Directory does not exist:" << directoryPath;
+            emit loadingFinished();  // still emit to unblock any UI loading indicator
+            return;
+        }
+
+        const QStringList csvFiles = dir.entryList(QStringList() << "*.csv", QDir::Files);
+        if (csvFiles.isEmpty()) {
+            qWarning() << "No CSV files found in:" << directoryPath;
+            emit loadingFinished();
+            return;
+        }
+
+        QMutex mutex;
+        QList<QFuture<void>> futures;
+
+        for (const QString &fileName : csvFiles) {
+            QString fullPath = dir.filePath(fileName);
+            QFuture<void> future = QtConcurrent::run(processCsvFile, fullPath, db.databaseName(), &mutex);
+            futures.append(future);
+        }
+
+        for (auto &future : futures) {
+            future.waitForFinished();  // This is okay here since we're already on a background thread
+        }
+
+        emit loadingFinished();
+    });
 }
 
 bool WeatherUtil::insert(const Weather &weather)

@@ -8,6 +8,9 @@
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QSqlError>
+#include <QFile>
+#include <QMessageBox>
+#include <QDir>
 
 WeatherUtil *util = nullptr;
 WeatherModel *model = nullptr;
@@ -39,13 +42,37 @@ void MainWindow::on_actionLoad_triggered()
     QFileDialog dialog;
     dialog.setFileMode(QFileDialog::Directory);
     dialog.exec();
-    util->loadFromDirectory(dialog.directory().absolutePath());
-    updateWeatherData();
+    ui->statusbar->showMessage("Loading...");
+    connect(util, &WeatherUtil::loadingFinished, this, [=]() {
+        updateWeatherData();
+        ui->statusbar->showMessage("Finished", 50);
+    });
+    util->loadFromDirectoryAsync(dialog.directory().absolutePath());
 }
 
 void MainWindow::on_actionClear_triggered()
 {
-    qDebug() << "clear";
+    QString dbPath = QDir::currentPath() + "/weather.db";
+
+    if (!QFile::exists(dbPath)) {
+        QMessageBox::information(this, "Clear Database", "No database file found to delete.");
+        return;
+    }
+
+    QSqlDatabase::removeDatabase(QSqlDatabase::defaultConnection);
+
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, "Clear Database",
+                                  "Are you sure you want to delete the weather database?",
+                                  QMessageBox::Yes | QMessageBox::No);
+    if (reply == QMessageBox::Yes) {
+        if (QFile::remove(dbPath)) {
+            QMessageBox::information(this, "Clear Database", "Database deleted successfully.");
+        } else {
+            QMessageBox::critical(this, "Clear Database", "Failed to delete the database file.");
+        }
+    }
+    updateWeatherData();
 }
 
 void MainWindow::updateWeatherData()

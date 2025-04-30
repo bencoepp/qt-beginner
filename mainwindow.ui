@@ -75,7 +75,7 @@
           <item>
            <widget class="QPushButton" name="pushButton">
             <property name="text">
-             <string>Execute</string>
+             <string>tr(Execute)</string>
             </property>
            </widget>
           </item>
