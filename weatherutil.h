@@ -13,6 +13,7 @@ public:
     explicit WeatherUtil(QObject *parent = nullptr);
     bool loadFromDirectory(const QString &directoryPath);
     QVector<Weather> select(const QString &selectQuery);
+    QVector<QMap<QString, QVariant>> selectAsMap(const QString &selectQuery);
     double highestTemp();
     double avgTemp();
     double lowestTemp();

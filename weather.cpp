@@ -26,17 +26,18 @@ void Weather::parse(const QString &line)
 void Weather::parse(QSqlQuery query)
 {
     QDateTime parseDate = QDateTime::fromString(query.value("date").toString(), Qt::ISODate);
-    date = parseDate;
-    averageTemperature = query.value("averageTemperature").toFloat();
-    minimumTemperature = query.value("minimumTemperature").toFloat();
-    maximunTemperature = query.value("maximunTemperature").toFloat();
-    precipitation = query.value("precipitation").toFloat();
-    snow = query.value("snow").toInt();
-    windDirection = static_cast<short>(query.value("windDirection").toInt());
-    windSpeed = query.value("windSpeed").toFloat();
-    windPeakGust = query.value("windPeakGust").toFloat();
-    airPressure = query.value("airPressure").toFloat();
-    sunshineDuration = query.value("sunshineDuration").toInt();
+    date = parseDate.isValid() ? parseDate : QDateTime();
+
+    averageTemperature = query.value("averageTemperature").isNull() ? 0.0f : query.value("averageTemperature").toFloat();
+    minimumTemperature = query.value("minimumTemperature").isNull() ? 0.0f : query.value("minimumTemperature").toFloat();
+    maximunTemperature = query.value("maximunTemperature").isNull() ? 0.0f : query.value("maximunTemperature").toFloat();
+    precipitation = query.value("precipitation").isNull() ? 0.0f : query.value("precipitation").toFloat();
+    snow = query.value("snow").isNull() ? 0 : query.value("snow").toInt();
+    windDirection = query.value("windDirection").isNull() ? 0 : static_cast<short>(query.value("windDirection").toInt());
+    windSpeed = query.value("windSpeed").isNull() ? 0.0f : query.value("windSpeed").toFloat();
+    windPeakGust = query.value("windPeakGust").isNull() ? 0.0f : query.value("windPeakGust").toFloat();
+    airPressure = query.value("airPressure").isNull() ? 0.0f : query.value("airPressure").toFloat();
+    sunshineDuration = query.value("sunshineDuration").isNull() ? 0 : query.value("sunshineDuration").toInt();
 }
 
 QDateTime Weather::getDate() const

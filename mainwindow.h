@@ -21,6 +21,8 @@ private slots:
     void on_actionLoad_triggered();
     void on_actionClear_triggered();
 
+    void on_pushButton_clicked();
+
 private:
     Ui::MainWindow *ui;
     void updateWeatherData();

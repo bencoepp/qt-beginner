@@ -32,6 +32,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         data/2018.csv data/2019.csv data/2020.csv data/2021.csv data/2022.csv
         weathermodel.h weathermodel.cpp
         weatherproxymodel.h weatherproxymodel.cpp
+        querymodel.h querymodel.cpp
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET qt-beginner APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR

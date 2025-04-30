@@ -3,6 +3,7 @@
 #include "weatherutil.h"
 #include "weathermodel.h"
 #include "weatherproxymodel.h"
+#include "querymodel.h"
 #include <QFileDialog>
 #include <QSqlDatabase>
 #include <QSqlQuery>
@@ -58,5 +59,30 @@ void MainWindow::updateWeatherData()
     QChartView *chartView = util->createTemperatureChart();
     if(chartView)
         ui->chart->layout()->addWidget(chartView);
+}
+
+
+void MainWindow::on_pushButton_clicked()
+{
+    if(ui->lineEdit->text() == "" || ui->lineEdit->text() == nullptr){
+        qWarning() << "No query provided";
+        return;
+    }
+
+    QString text = ui->lineEdit->text();
+
+    if(text.contains("INSERT") || text.contains("UPDATE") || text.contains("DELETE")){
+        qWarning() << "Dangerous query provided";
+        return;
+    }
+
+    QueryModel *modelQuery = new QueryModel(this);
+    WeatherProxyModel *proxyModelQuery = new WeatherProxyModel(this);
+
+    modelQuery->setData(util->selectAsMap(text));
+    proxyModelQuery->setSourceModel(modelQuery);
+    ui->queryTable->setModel(proxyModelQuery);
+    ui->queryTable->setSortingEnabled(true);
+    ui->queryTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 }
 

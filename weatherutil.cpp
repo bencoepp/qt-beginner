@@ -7,6 +7,7 @@
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
 #include <QtCharts/QDateTimeAxis>
+#include <QSqlRecord>
 
 WeatherUtil::WeatherUtil(QObject *parent)
     : QObject{parent}
@@ -83,6 +84,29 @@ QVector<Weather> WeatherUtil::select(const QString &selectQuery)
     }
 
     return weatherList;
+}
+
+QVector<QMap<QString, QVariant>> WeatherUtil::selectAsMap(const QString &selectQuery)
+{
+    QVector<QMap<QString, QVariant>> resultList;
+
+    QSqlQuery query;
+    if (!query.exec(selectQuery)) {
+        qDebug() << "Error executing select query:" << query.lastError().text();
+        return resultList;
+    }
+
+    while (query.next()) {
+        QMap<QString, QVariant> rowMap;
+        for (int i = 0; i < query.record().count(); ++i) {
+            QString columnName = query.record().fieldName(i);
+            QVariant value = query.value(i);
+            rowMap.insert(columnName, value);
+        }
+        resultList.append(rowMap);
+    }
+
+    return resultList;
 }
 
 double WeatherUtil::highestTemp()
